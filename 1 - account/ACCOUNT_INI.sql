@@ -1,0 +1,112 @@
+
+SET SERVEROUTPUT ON;
+SET TIME ON;
+SET TIMING ON;
+
+SPOOL ACCOUNT_INI.LOG
+
+ALTER SESSION ENABLE PARALLEL DML;
+
+ALTER SESSION ENABLE PARALLEL QUERY;
+
+EXEC DBMS_OUTPUT.PUT_LINE(TO_CHAR(SYSDATE,'DD-MM-YYYY HH24:MI:SS')||'- INICIO DA CARGA DA TABELA ACCOUNT - LIMPEZA');
+
+BEGIN
+   EXECUTE IMMEDIATE 'DROP TABLE APP_RELOWN.ACCOUNT';   
+EXCEPTION
+  WHEN OTHERS THEN
+  IF SQLCODE != -942 THEN
+    RAISE;
+  END IF;
+END;
+/
+
+CREATE TABLE APP_RELOWN.ACCOUNT
+(
+  PARTITION_KEY   CHAR(1) NOT NULL,
+  SRKACT          NUMBER NOT NULL,
+  CODACTCRM       NUMBER,
+  BUSTYP          CHAR(1),
+  DTEUPDACT       TIMESTAMP(3),
+  DTECREACT       TIMESTAMP(3),
+  EMAACT          VARCHAR2(270),
+  FIRSTNAM        VARCHAR2(255),
+  MIDNAM          VARCHAR2(255),
+  LASTNAM         VARCHAR2(255),
+  SAL             VARCHAR2(10),
+  COMPNAM         VARCHAR2(255),
+  CPFCNPJ         VARCHAR2(50),
+  MUNAPP          VARCHAR2(255),
+  STTAPP          VARCHAR2(255),
+  SEGACT          VARCHAR2(10),
+  EMAALT          VARCHAR2(255),
+  CODACTSTEBRM    VARCHAR2(1),
+  CODACTBRM       VARCHAR2(50),
+  CODACTBLL       NUMBER,
+  CODHOSTCRM      NUMBER,
+  CODHOSTBLL      NUMBER,
+  FLGTST          NUMBER,
+  BIRTHDAY_T      DATE,
+  BROADBAND_FLAG  NUMBER,
+  CHILDREN_COUNT  NUMBER,
+  GENDER          NUMBER,
+  MARITAL_STATUS  NUMBER,
+  PJ_NAME         VARCHAR2(255),
+  PPZ_LOGIN       VARCHAR2(255),
+  SCHOLARITY      NUMBER,
+  SECRET_ANSWER   VARCHAR2(255),
+  SECRET_QUESTION VARCHAR2(255),
+  OPERACAO VARCHAR2(1) DEFAULT 'I',
+  CD_EXEC  NUMBER DEFAULT -2,  
+  INSDTE          TIMESTAMP(3) DEFAULT SYSDATE,
+  UPDDTE          DATE
+) PARTITION BY LIST (PARTITION_KEY)
+(
+   PARTITION ACCOUNT_I VALUES('I') TABLESPACE TSD_MIGDW,
+   PARTITION ACCOUNT_O VALUES('O') TABLESPACE TSD_MIGDW,
+   PARTITION ACCOUNT_B VALUES('B') TABLESPACE TSD_MIGDW
+)
+TABLESPACE TSD_MIGDW  COMPRESS FOR ALL OPERATIONS;
+
+comment on column APP_RELOWN.ACCOUNT.CODACTCRM
+  is 'Legacy ID do CRM';
+comment on column APP_RELOWN.ACCOUNT.BUSTYP
+  is 'B-Business,C-Consumer';
+comment on column APP_RELOWN.ACCOUNT.DTEUPDACT
+  is 'Effective time of modification of this account on an external system.';
+comment on column APP_RELOWN.ACCOUNT.DTECREACT
+  is 'Created date and time of this account on an external system.';
+comment on column APP_RELOWN.ACCOUNT.EMAACT
+  is 'Email address for the contact';
+comment on column APP_RELOWN.ACCOUNT.FIRSTNAM
+  is 'First name of the contact';
+comment on column APP_RELOWN.ACCOUNT.MIDNAM
+  is 'Middle name of the contact';
+comment on column APP_RELOWN.ACCOUNT.LASTNAM
+  is 'Last name of the contact';
+comment on column APP_RELOWN.ACCOUNT.SAL
+  is 'Salutation for the contact name';
+comment on column APP_RELOWN.ACCOUNT.COMPNAM
+  is 'Companhia (apenas para empresarial)';
+comment on column APP_RELOWN.ACCOUNT.EMAALT
+  is 'E-mail Alternativo - Legado';
+comment on column APP_RELOWN.ACCOUNT.CODACTBRM
+  is 'Codigo do Legado enviado para o BRM';
+comment on column APP_RELOWN.ACCOUNT.CODACTBLL
+  is 'Legacy ID do BILLING quando existir';
+comment on column APP_RELOWN.ACCOUNT.FLGTST
+  is 'Indicador que o registro e de teste';
+comment on column APP_RELOWN.ACCOUNT.INSDTE
+  is 'Data de criação do registro na tabela';
+comment on column APP_RELOWN.ACCOUNT.UPDDTE
+  is 'Data de atualização do registro na tabela';
+  
+GRANT ALL ON APP_RELOWN.ACCOUNT TO APP_STGOWN;
+GRANT ALL ON APP_RELOWN.ACCOUNT TO APP_TDWOWN;
+
+EXEC DBMS_OUTPUT.PUT_LINE(TO_CHAR(SYSDATE,'DD-MM-YYYY HH24:MI:SS')||'- TERMINO DE CARGA DA TABELA ACCOUNT- LIMPEZA');
+
+SPOOL OFF;
+
+EXIT;
+/
